@@ -35,7 +35,7 @@ pub enum Intrinsic {
     /// The external contract static call.
     StaticCall,
 
-    /// The memory copy.
+    /// The memory copy within the heap.
     MemoryCopy,
     /// The memory copy from parent.
     MemoryCopyFromParent,
@@ -102,11 +102,11 @@ impl Intrinsic {
             Self::MemoryCopy => vec![
                 context
                     .field_type()
-                    .ptr_type(AddressSpace::Stack.into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 context
                     .field_type()
-                    .ptr_type(AddressSpace::Stack.into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 context.field_type().as_basic_type_enum(),
             ],

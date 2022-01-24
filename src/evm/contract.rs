@@ -31,6 +31,8 @@ where
         crate::evm::check_value_zero(context, value);
     }
 
+    branch_identity(context, address, output_offset, input_offset, output_size)?;
+
     let intrinsic = context.get_intrinsic_function(IntrinsicFunction::SwitchContext);
     context.build_call(intrinsic, &[], "contract_call_switch_context");
 
@@ -122,4 +124,51 @@ where
             .resolve_library(path.as_str())?
             .as_basic_value_enum(),
     ))
+}
+
+///
+/// Generates a memcopy call for the Identity precompile.
+///
+fn branch_identity<'ctx, 'dep, D>(
+    context: &mut Context<'ctx, 'dep, D>,
+    address: inkwell::values::IntValue<'ctx>,
+    destination: inkwell::values::IntValue<'ctx>,
+    source: inkwell::values::IntValue<'ctx>,
+    size: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<()>
+where
+    D: Dependency,
+{
+    let identity_block = context.append_basic_block("contract_call_identity_block");
+    let join_block = context.append_basic_block("contract_call_join_block");
+
+    let is_address_identity = context.builder().build_int_compare(
+        inkwell::IntPredicate::EQ,
+        address,
+        context.field_const_str(compiler_common::ABI_ADDRESS_IDENTITY),
+        "contract_call_is_address_identity",
+    );
+
+    let destination = context.access_memory(
+        destination,
+        AddressSpace::Heap,
+        "contract_call_identity_destination",
+    );
+    let source = context.access_memory(source, AddressSpace::Heap, "contract_call_identity_source");
+
+    context.build_conditional_branch(is_address_identity, identity_block, join_block);
+
+    context.set_basic_block(identity_block);
+    context.build_memcpy(
+        IntrinsicFunction::MemoryCopy,
+        destination,
+        source,
+        size,
+        "contract_call_memcpy_to_child",
+    );
+    context.build_unconditional_branch(join_block);
+
+    context.set_basic_block(join_block);
+
+    Ok(())
 }

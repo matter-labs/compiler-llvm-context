@@ -128,67 +128,16 @@ where
     context.build_unconditional_branch(join_block);
 
     context.set_basic_block(memory_zero_block);
-    self::memory_zero(context, destination_offset, size)?;
+    context.build_call(
+        context.runtime.memset_uma_heap,
+        &[
+            destination_offset.as_basic_value_enum(),
+            context.field_const(0).as_basic_value_enum(),
+            size.as_basic_value_enum(),
+        ],
+        "deployer_call",
+    );
     context.build_unconditional_branch(join_block);
-
-    context.set_basic_block(join_block);
-    Ok(None)
-}
-
-fn memory_zero<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
-    destination_offset: inkwell::values::IntValue<'ctx>,
-    size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
-where
-    D: Dependency,
-{
-    let condition_block = context.append_basic_block("calldata_memory_zero_condition");
-    let body_block = context.append_basic_block("calldata_memory_zero_body");
-    let increment_block = context.append_basic_block("calldata_memory_zero_increment");
-    let join_block = context.append_basic_block("calldata_memory_zero_join");
-
-    let index_pointer =
-        context.build_alloca(context.field_type(), "calldata_memory_zero_index_pointer");
-    context.build_store(index_pointer, context.field_const(0));
-    context.build_unconditional_branch(condition_block);
-
-    context.set_basic_block(condition_block);
-    let index_value =
-        context.build_load(index_pointer, "calldata_memory_zero_condition_index_value");
-    let condition = context.builder().build_int_compare(
-        inkwell::IntPredicate::ULT,
-        index_value.into_int_value(),
-        size,
-        "calldata_memory_zero_condition_compared",
-    );
-    context.build_conditional_branch(condition, body_block, join_block);
-
-    context.set_basic_block(body_block);
-    let index_value = context.build_load(index_pointer, "calldata_memory_zero_body_index_value");
-    let destination_offset = context.builder().build_int_add(
-        destination_offset,
-        index_value.into_int_value(),
-        "calldata_memory_zero_body_destination_offset",
-    );
-    let destination_pointer = context.access_memory(
-        destination_offset,
-        AddressSpace::Heap,
-        "calldata_memory_zero_body_destination_pointer",
-    );
-    context.build_store(destination_pointer, context.field_const(0));
-    context.build_unconditional_branch(increment_block);
-
-    context.set_basic_block(increment_block);
-    let index_value =
-        context.build_load(index_pointer, "calldata_memory_zero_increment_index_value");
-    let index_value_incremented = context.builder().build_int_add(
-        index_value.into_int_value(),
-        context.field_const(compiler_common::SIZE_FIELD as u64),
-        "calldata_memory_zero_increment_index_value_incremented",
-    );
-    context.build_store(index_pointer, index_value_incremented);
-    context.build_unconditional_branch(condition_block);
 
     context.set_basic_block(join_block);
     Ok(None)

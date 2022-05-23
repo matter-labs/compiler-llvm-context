@@ -36,6 +36,9 @@ pub struct Runtime<'ctx> {
     pub delegate_call: inkwell::values::FunctionValue<'ctx>,
     /// The `__mimiccall` runtime function.
     pub mimic_call: inkwell::values::FunctionValue<'ctx>,
+
+    /// The `__memset_uma_as1` runtime function.
+    pub memset_uma_heap: inkwell::values::FunctionValue<'ctx>,
 }
 
 impl<'ctx> Runtime<'ctx> {
@@ -54,32 +57,35 @@ impl<'ctx> Runtime<'ctx> {
     /// The LLVM exception throwing function name.
     pub const FUNCTION_CXA_THROW: &'static str = "__cxa_throw";
 
-    /// The `addmod` runtime function name.
+    /// The `__addmod` runtime function name.
     pub const FUNCTION_ADDMOD: &'static str = "__addmod";
 
-    /// The `mulmod` runtime function name.
+    /// The `__mulmod` runtime function name.
     pub const FUNCTION_MULMOD: &'static str = "__mulmod";
 
-    /// The `signextend` runtime function name.
+    /// The `__signextend` runtime function name.
     pub const FUNCTION_SIGNEXTEND: &'static str = "__signextend";
 
-    /// The `sload` runtime function name.
+    /// The `__sload` runtime function name.
     pub const FUNCTION_SLOAD: &'static str = "__sload";
 
-    /// The `sstore` runtime function name.
+    /// The `__sstore` runtime function name.
     pub const FUNCTION_SSTORE: &'static str = "__sstore";
 
-    /// The `farcall` runtime function name.
+    /// The `__farcall` runtime function name.
     pub const FUNCTION_FARCALL: &'static str = "__farcall";
 
-    /// The `staticcall` runtime function name.
+    /// The `__staticcall` runtime function name.
     pub const FUNCTION_STATICCALL: &'static str = "__staticcall";
 
-    /// The `delegatecall` runtime function name.
+    /// The `__delegatecall` runtime function name.
     pub const FUNCTION_DELEGATECALL: &'static str = "__delegatecall";
 
-    /// The `mimiccall` runtime function name.
+    /// The `__mimiccall` runtime function name.
     pub const FUNCTION_MIMICCALL: &'static str = "__mimiccall";
+
+    /// The `__memset_uma_as1` runtime function name.
+    pub const FUNCTION_MEMSET_UMA_HEAP: &'static str = "__memset_uma_as1";
 
     ///
     /// A shortcut constructor.
@@ -258,6 +264,22 @@ impl<'ctx> Runtime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
 
+        let memset_uma_heap = module.add_function(
+            Self::FUNCTION_MEMSET_UMA_HEAP,
+            llvm.void_type().fn_type(
+                &[
+                    llvm.custom_width_int_type(compiler_common::BITLENGTH_FIELD as u32)
+                        .as_basic_type_enum(),
+                    llvm.custom_width_int_type(compiler_common::BITLENGTH_FIELD as u32)
+                        .as_basic_type_enum(),
+                    llvm.custom_width_int_type(compiler_common::BITLENGTH_FIELD as u32)
+                        .as_basic_type_enum(),
+                ],
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+
         Self {
             personality,
             cxa_throw,
@@ -274,6 +296,8 @@ impl<'ctx> Runtime<'ctx> {
             static_call,
             delegate_call,
             mimic_call,
+
+            memset_uma_heap,
         }
     }
 

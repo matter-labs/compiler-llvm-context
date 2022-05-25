@@ -135,7 +135,7 @@ where
             context.field_const(0).as_basic_value_enum(),
             size.as_basic_value_enum(),
         ],
-        "deployer_call",
+        "calldata_copy_memset_call",
     );
     context.build_unconditional_branch(join_block);
 

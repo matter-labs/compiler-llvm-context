@@ -7,6 +7,7 @@ use crate::context::code_type::CodeType;
 use crate::context::function::intrinsic::Intrinsic as IntrinsicFunction;
 use crate::context::Context;
 use crate::Dependency;
+use inkwell::values::BasicValue;
 
 ///
 /// Translates the normal return.
@@ -80,12 +81,13 @@ pub fn stop<'ctx, 'dep, D>(
 where
     D: Dependency,
 {
-    context.build_exit(
-        IntrinsicFunction::Return,
-        context.field_const(0),
-        context.field_const(0),
-    );
-    Ok(None)
+    self::r#return(
+        context,
+        [
+            context.field_const(0).as_basic_value_enum(),
+            context.field_const(0).as_basic_value_enum(),
+        ],
+    )
 }
 
 ///

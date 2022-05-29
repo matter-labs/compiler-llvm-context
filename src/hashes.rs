@@ -27,8 +27,8 @@ pub fn bytecode_hash(bytecode: &[u8]) -> anyhow::Result<String> {
         .map(|chunk| chunk.try_into().expect("Invalid byte code"))
         .collect::<Vec<[u8; compiler_common::SIZE_FIELD]>>();
 
-    if bytecode.len() % 2 != 0 {
-        anyhow::bail!("The bytecode size is not multiple of 2");
+    if bytecode.len() % 2 == 0 {
+        anyhow::bail!("The bytecode size cannot be multiple of 2");
     }
 
     let mut hasher = sha2::Sha256::new();

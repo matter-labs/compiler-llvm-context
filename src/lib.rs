@@ -99,7 +99,6 @@ pub trait Dependency {
     fn compile(
         &mut self,
         name: &str,
-        parent_name: &str,
         optimizer_settings: OptimizerSettings,
         dump_flags: Vec<DumpFlag>,
     ) -> anyhow::Result<String>;

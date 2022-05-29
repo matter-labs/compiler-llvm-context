@@ -282,7 +282,6 @@ where
             .and_then(|manager| {
                 manager.compile(
                     name,
-                    self.module.get_name().to_str().expect("Always valid"),
                     self.optimizer.settings().to_owned(),
                     self.dump_flags.clone(),
                 )

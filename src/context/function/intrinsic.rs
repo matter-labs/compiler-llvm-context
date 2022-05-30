@@ -78,9 +78,9 @@ impl Intrinsic {
     ///
     /// Returns the LLVM types for selecting via the signature.
     ///
-    pub fn argument_types<'ctx, 'dep, D>(
+    pub fn argument_types<'ctx, D>(
         &self,
-        context: &Context<'ctx, 'dep, D>,
+        context: &Context<'ctx, D>,
     ) -> Vec<inkwell::types::BasicTypeEnum<'ctx>>
     where
         D: Dependency,

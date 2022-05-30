@@ -8,8 +8,8 @@ use crate::Dependency;
 ///
 /// Translates the contract storage load.
 ///
-pub fn load<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn load<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 1],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -25,8 +25,8 @@ where
 ///
 /// Translates the contract storage store.
 ///
-pub fn store<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn store<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where

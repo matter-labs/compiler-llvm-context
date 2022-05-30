@@ -26,8 +26,8 @@ use crate::Dependency;
 ///
 /// Sends and transfers have their `value` non-zero.
 ///
-pub fn check_value_zero<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn check_value_zero<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     value: inkwell::values::IntValue<'ctx>,
 ) where
     D: Dependency,

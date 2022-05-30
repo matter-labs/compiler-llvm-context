@@ -10,8 +10,8 @@ use crate::Dependency;
 ///
 /// Translates the comparison operations.
 ///
-pub fn compare<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn compare<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
     operation: inkwell::IntPredicate,
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>

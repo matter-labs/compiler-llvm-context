@@ -10,8 +10,8 @@ use crate::Dependency;
 ///
 /// Translates the arithmetic addition.
 ///
-pub fn addition<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn addition<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -32,8 +32,8 @@ where
 ///
 /// Translates the arithmetic subtraction.
 ///
-pub fn subtraction<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn subtraction<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -54,8 +54,8 @@ where
 ///
 /// Translates the arithmetic multiplication.
 ///
-pub fn multiplication<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn multiplication<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -76,8 +76,8 @@ where
 ///
 /// Translates the arithmetic division.
 ///
-pub fn division<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn division<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -118,8 +118,8 @@ where
 ///
 /// Translates the arithmetic remainder.
 ///
-pub fn remainder<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn remainder<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -160,8 +160,8 @@ where
 ///
 /// Translates the signed arithmetic division.
 ///
-pub fn division_signed<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn division_signed<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -229,8 +229,8 @@ where
 ///
 /// Translates the signed arithmetic remainder.
 ///
-pub fn remainder_signed<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn remainder_signed<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where

@@ -10,8 +10,8 @@ use crate::Dependency;
 ///
 /// Translates the contract immutable load.
 ///
-pub fn load<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn load<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     key: String,
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -31,8 +31,8 @@ where
 ///
 /// Translates the contract immutable store.
 ///
-pub fn store<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn store<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     key: String,
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>

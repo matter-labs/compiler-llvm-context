@@ -12,8 +12,8 @@ use crate::Dependency;
 ///
 /// Translates the hash instruction.
 ///
-pub fn keccak256<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn keccak256<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>

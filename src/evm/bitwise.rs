@@ -10,8 +10,8 @@ use crate::Dependency;
 ///
 /// Translates the bitwise OR.
 ///
-pub fn or<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn or<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -32,8 +32,8 @@ where
 ///
 /// Translates the bitwise XOR.
 ///
-pub fn xor<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn xor<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -54,8 +54,8 @@ where
 ///
 /// Translates the bitwise AND.
 ///
-pub fn and<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn and<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -76,8 +76,8 @@ where
 ///
 /// Translates the bitwise shift left.
 ///
-pub fn shift_left<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn shift_left<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -117,8 +117,8 @@ where
 ///
 /// Translates the bitwise shift right.
 ///
-pub fn shift_right<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn shift_right<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -159,8 +159,8 @@ where
 ///
 /// Translates the arithmetic bitwise shift right.
 ///
-pub fn shift_right_arithmetic<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn shift_right_arithmetic<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -230,8 +230,8 @@ where
 ///
 /// Translates the byte extraction.
 ///
-pub fn byte<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn byte<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where

@@ -10,8 +10,8 @@ use crate::Dependency;
 ///
 /// Translates the modular addition operation.
 ///
-pub fn add_mod<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn add_mod<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 3],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -27,8 +27,8 @@ where
 ///
 /// Translates the modular multiplication operation.
 ///
-pub fn mul_mod<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn mul_mod<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 3],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -44,8 +44,8 @@ where
 ///
 /// Translates the exponent operation.
 ///
-pub fn exponent<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn exponent<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where
@@ -109,8 +109,8 @@ where
 ///
 /// Translates the sign extension operation.
 ///
-pub fn sign_extend<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn sign_extend<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     arguments: [inkwell::values::BasicValueEnum<'ctx>; 2],
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
 where

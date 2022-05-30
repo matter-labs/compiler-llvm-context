@@ -45,6 +45,9 @@ pub use self::evm::storage;
 pub use self::hashes::bytecode_hash;
 pub use self::hashes::keccak256;
 
+use std::sync::Arc;
+use std::sync::RwLock;
+
 ///
 /// Initializes the zkEVM target machine.
 ///
@@ -97,8 +100,8 @@ pub trait Dependency {
     /// Compiles a project dependency.
     ///
     fn compile(
-        &mut self,
-        name: &str,
+        object: Arc<RwLock<Self>>,
+        path: &str,
         optimizer_settings: OptimizerSettings,
         dump_flags: Vec<DumpFlag>,
     ) -> anyhow::Result<String>;

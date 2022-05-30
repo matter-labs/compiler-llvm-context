@@ -12,8 +12,8 @@ use crate::Dependency;
 ///
 /// Translates a log or event call.
 ///
-pub fn log<'ctx, 'dep, D>(
-    context: &mut Context<'ctx, 'dep, D>,
+pub fn log<'ctx, D>(
+    context: &mut Context<'ctx, D>,
     range_start: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
     topics: Vec<inkwell::values::IntValue<'ctx>>,

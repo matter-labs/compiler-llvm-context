@@ -741,7 +741,7 @@ where
                 if return_type.is_pointer_type() {
                     let return_pointer = self.builder().build_int_to_ptr(
                         return_value.into_int_value(),
-                        return_type.ptr_type(AddressSpace::Stack.into()),
+                        return_type.into_pointer_type(),
                         format!("{}_near_call_return_pointer_casted", name).as_str(),
                     );
                     return_value = self.build_load(

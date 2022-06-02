@@ -34,6 +34,10 @@ pub enum Intrinsic {
     TxOrigin,
     /// The remaining amount of ergs.
     ErgsLeft,
+    /// The abstract `u128` getter.
+    GetU128,
+    /// The abstract `u128` setter.
+    SetU128,
 
     /// The long return.
     Return,
@@ -65,6 +69,8 @@ impl Intrinsic {
             Intrinsic::Meta => "llvm.syncvm.meta",
             Intrinsic::TxOrigin => "llvm.syncvm.txorigin",
             Intrinsic::ErgsLeft => "llvm.syncvm.ergsleft",
+            Intrinsic::GetU128 => "llvm.syncvm.getu128",
+            Intrinsic::SetU128 => "llvm.syncvm.setu128",
 
             Intrinsic::Return => "llvm.syncvm.return",
             Intrinsic::Revert => "llvm.syncvm.revert",

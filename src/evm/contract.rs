@@ -36,6 +36,7 @@ where
     let meta_block = context.append_basic_block("contract_call_meta_block");
     let mimic_call_block = context.append_basic_block("contract_call_mimic_call_block");
     let system_call_block = context.append_basic_block("contract_call_system_call_block");
+    let set_context_value_block = context.append_basic_block("contract_call_msg_value_block");
     let ordinary_block = context.append_basic_block("contract_call_ordinary_block");
     let join_block = context.append_basic_block("contract_call_join_block");
 
@@ -73,6 +74,10 @@ where
             (
                 context.field_const_str(compiler_common::ABI_ADDRESS_SYSTEM_CALL),
                 system_call_block,
+            ),
+            (
+                context.field_const_str(compiler_common::ABI_ADDRESS_SET_CONTEXT_VALUE_CALL),
+                set_context_value_block,
             ),
         ],
     );
@@ -245,6 +250,18 @@ where
         }
     }
 
+    {
+        context.set_basic_block(set_context_value_block);
+        let value = value.unwrap_or_else(|| context.field_const(0));
+
+        context.build_call(
+            context.get_intrinsic_function(IntrinsicFunction::SetU128),
+            &[value.as_basic_value_enum()],
+            "contract_call_simulation_set_context_value",
+        );
+        context.build_unconditional_branch(join_block);
+    }
+
     context.set_basic_block(ordinary_block);
     let result = if let Some(value) = value {
         call_default_wrapped(
@@ -332,30 +349,12 @@ where
     context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
 
     context.set_basic_block(value_non_zero_block);
-    let value_offset = context.builder().build_int_add(
+    let extra_data_offset = context.builder().build_int_add(
         input_offset,
         input_length,
-        "contract_call_value_extra_offset",
+        "contract_call_extra_data_offset",
     );
-    let value_pointer = context.access_memory(
-        value_offset,
-        AddressSpace::Heap,
-        "contract_call_value_extra_pointer",
-    );
-    context.build_store(value_pointer, value);
-
-    let address_offset = context.builder().build_int_add(
-        value_offset,
-        context.field_const(compiler_common::SIZE_FIELD as u64),
-        "contract_call_address_extra_offset",
-    );
-    let address_pointer = context.access_memory(
-        address_offset,
-        AddressSpace::Heap,
-        "contract_call_address_extra_pointer",
-    );
-    context.build_store(address_pointer, address);
-
+    crate::evm::save_and_write_extra_data(context, extra_data_offset, value, address)?;
     let input_length_with_extra = context.builder().build_int_add(
         input_length,
         context.field_const((compiler_common::SIZE_FIELD * 2) as u64),

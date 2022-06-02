@@ -34,6 +34,7 @@ pub use self::evm::calldata;
 pub use self::evm::comparison;
 pub use self::evm::contract;
 pub use self::evm::create;
+pub use self::evm::ether_gas;
 pub use self::evm::event;
 pub use self::evm::hash;
 pub use self::evm::immutable;

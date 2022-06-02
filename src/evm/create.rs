@@ -146,37 +146,22 @@ where
     context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
 
     context.set_basic_block(value_non_zero_block);
-    let value_offset = context.builder().build_int_add(
+    let extra_data_offset = context.builder().build_int_add(
         input_offset,
         input_length,
-        "contract_call_value_extra_offset",
+        "deployer_call_extra_data_offset",
     );
-    let value_pointer = context.access_memory(
-        value_offset,
-        AddressSpace::Heap,
-        "contract_call_value_extra_pointer",
-    );
-    context.build_store(value_pointer, value);
-
-    let address_offset = context.builder().build_int_add(
-        value_offset,
-        context.field_const(compiler_common::SIZE_FIELD as u64),
-        "contract_call_address_extra_offset",
-    );
-    let address_pointer = context.access_memory(
-        address_offset,
-        AddressSpace::Heap,
-        "contract_call_address_extra_pointer",
-    );
-    context.build_store(
-        address_pointer,
+    crate::evm::save_and_write_extra_data(
+        context,
+        extra_data_offset,
+        value,
         context.field_const_str_hex(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER),
-    );
+    )?;
 
     let input_length_with_extra = context.builder().build_int_add(
         input_length,
         context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
-        "contract_call_input_length_with_extra",
+        "deployer_call_input_length_with_extra",
     );
     let address = call_deployer(
         context,
@@ -374,8 +359,8 @@ where
         AddressSpace::Child,
         "deployer_call_child_pointer",
     );
-    let child_address = context.build_load(child_data_pointer, "deployer_call_child_address");
-    context.build_store(return_pointer, child_address);
+    let child_data_value = context.build_load(child_data_pointer, "deployer_call_child_address");
+    context.build_store(return_pointer, child_data_value);
     context.build_unconditional_branch(deployer_call_join_block);
 
     context.set_basic_block(deployer_call_join_block);

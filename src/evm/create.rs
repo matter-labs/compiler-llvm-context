@@ -10,6 +10,17 @@ use crate::AddressSpace;
 use crate::Dependency;
 
 ///
+/// The deployer call header size, which consists of:
+/// - selector (4 bytes)
+/// - salt (32 bytes)
+/// - bytecode hash (32 bytes)
+/// - ether value (32 bytes)
+/// - constructor arguments offset (32 bytes)
+/// - constructor arguments length (32 bytes)
+///
+pub const HEADER_SIZE: usize = compiler_common::SIZE_X32 + (compiler_common::SIZE_FIELD * 5);
+
+///
 /// Translates the contract `create` instruction.
 ///
 pub fn create<'ctx, D>(
@@ -21,12 +32,12 @@ pub fn create<'ctx, D>(
 where
     D: Dependency,
 {
-    let address = call_deployer_wrapped(
+    let address = call_deployer(
         context,
         value,
         input_offset,
         input_length,
-        "create(bytes32,bytes32,bytes)",
+        "create(bytes32,bytes32,uint256,bytes)",
         None,
     )?;
 
@@ -46,12 +57,12 @@ pub fn create2<'ctx, D>(
 where
     D: Dependency,
 {
-    let address = call_deployer_wrapped(
+    let address = call_deployer(
         context,
         value,
         input_offset,
         input_length,
-        "create2(bytes32,bytes32,bytes)",
+        "create2(bytes32,bytes32,uint256,bytes)",
         salt,
     )?;
 
@@ -96,7 +107,7 @@ where
 ///
 /// Concerning AST, it looks like `datasize` in Yul, and `PUSH #[$]` in the EVM legacy assembly.
 ///
-pub fn contract_hash_size<'ctx, D>(
+pub fn header_size<'ctx, D>(
     context: &mut Context<'ctx, D>,
     identifier: String,
 ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>
@@ -111,84 +122,9 @@ where
 
     Ok(Some(
         context
-            .field_const((compiler_common::SIZE_X32 + compiler_common::SIZE_FIELD * 4) as u64)
+            .field_const(HEADER_SIZE as u64)
             .as_basic_value_enum(),
     ))
-}
-
-///
-/// The deployer call wrapper, which makes the necessary ABI tweaks if `msg.value` is not zero.
-///
-fn call_deployer_wrapped<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-    value: inkwell::values::IntValue<'ctx>,
-    input_offset: inkwell::values::IntValue<'ctx>,
-    input_length: inkwell::values::IntValue<'ctx>,
-    signature: &'static str,
-    salt: Option<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
-    let value_zero_block = context.append_basic_block("deployer_call_value_zero_block");
-    let value_non_zero_block = context.append_basic_block("deployer_call_value_non_zero_block");
-    let value_join_block = context.append_basic_block("deployer_call_value_join_block");
-
-    let address_result_pointer =
-        context.build_alloca(context.field_type(), "deployer_call_address_result_pointer");
-    context.build_store(address_result_pointer, context.field_const(0));
-    let is_value_zero = context.builder().build_int_compare(
-        inkwell::IntPredicate::EQ,
-        value,
-        context.field_const(0),
-        "deployer_call_is_value_zero",
-    );
-    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
-
-    context.set_basic_block(value_non_zero_block);
-    let extra_data_offset = context.builder().build_int_add(
-        input_offset,
-        input_length,
-        "deployer_call_extra_data_offset",
-    );
-    crate::evm::save_and_write_extra_data(
-        context,
-        extra_data_offset,
-        value,
-        context.field_const_str_hex(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER),
-    )?;
-
-    let input_length_with_extra = context.builder().build_int_add(
-        input_length,
-        context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
-        "deployer_call_input_length_with_extra",
-    );
-    let address = call_deployer(
-        context,
-        context.field_const_str_hex(compiler_common::ABI_ADDRESS_MSG_VALUE),
-        input_offset,
-        input_length_with_extra,
-        signature,
-        salt,
-    )?;
-    context.build_store(address_result_pointer, address);
-    context.build_unconditional_branch(value_join_block);
-
-    context.set_basic_block(value_zero_block);
-    let address = call_deployer(
-        context,
-        context.field_const_str_hex(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER),
-        input_offset,
-        input_length,
-        signature,
-        salt,
-    )?;
-    context.build_store(address_result_pointer, address);
-    context.build_unconditional_branch(value_join_block);
-
-    context.set_basic_block(value_join_block);
-    let address = context.build_load(address_result_pointer, "deployer_call_address_result");
-    Ok(address)
 }
 
 ///
@@ -196,7 +132,7 @@ where
 ///
 fn call_deployer<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    address: inkwell::values::IntValue<'ctx>,
+    value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     signature: &'static str,
@@ -241,9 +177,21 @@ where
     let salt_value = salt.unwrap_or_else(|| context.field_const(0));
     context.build_store(salt_pointer, salt_value);
 
-    let arguments_offset_offset = context.builder().build_int_add(
+    let value_offset = context.builder().build_int_add(
         salt_offset,
         context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
+        "deployer_call_value_offset",
+    );
+    let value_pointer = context.access_memory(
+        value_offset,
+        AddressSpace::Heap,
+        "deployer_call_value_pointer",
+    );
+    context.build_store(value_pointer, value);
+
+    let arguments_offset_offset = context.builder().build_int_add(
+        value_offset,
+        context.field_const(compiler_common::SIZE_FIELD as u64),
         "deployer_call_arguments_offset_offset",
     );
     let arguments_offset_pointer = context.access_memory(
@@ -253,7 +201,9 @@ where
     );
     context.build_store(
         arguments_offset_pointer,
-        context.field_const((compiler_common::SIZE_FIELD * 3) as u64),
+        context.field_const(
+            (HEADER_SIZE - (compiler_common::SIZE_X32 + compiler_common::SIZE_FIELD)) as u64,
+        ),
     );
 
     let arguments_length_offset = context.builder().build_int_add(
@@ -268,7 +218,7 @@ where
     );
     let arguments_length_value = context.builder().build_int_sub(
         input_length,
-        context.field_const((compiler_common::SIZE_X32 + compiler_common::SIZE_FIELD * 4) as u64),
+        context.field_const(HEADER_SIZE as u64),
         "deployer_call_arguments_length",
     );
     context.build_store(arguments_length_pointer, arguments_length_value);
@@ -289,7 +239,9 @@ where
         .build_invoke(
             context.runtime.far_call,
             &[
-                address.as_basic_value_enum(),
+                context
+                    .field_const_str(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER)
+                    .as_basic_value_enum(),
                 abi_data.as_basic_value_enum(),
                 result_pointer.as_basic_value_enum(),
             ],

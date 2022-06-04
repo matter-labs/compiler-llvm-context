@@ -21,9 +21,9 @@ pub fn create<'ctx, D>(
 where
     D: Dependency,
 {
-    let address = call_deployer_wrapped(
+    let address = call_deployer(
         context,
-        value,
+        context.field_const_str_hex(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER),
         input_offset,
         input_length,
         "create(bytes32,bytes32,bytes)",
@@ -46,9 +46,9 @@ pub fn create2<'ctx, D>(
 where
     D: Dependency,
 {
-    let address = call_deployer_wrapped(
+    let address = call_deployer(
         context,
-        value,
+        context.field_const_str_hex(compiler_common::ABI_ADDRESS_CONTRACT_DEPLOYER),
         input_offset,
         input_length,
         "create2(bytes32,bytes32,bytes)",
@@ -143,7 +143,7 @@ where
         context.field_const(0),
         "deployer_call_is_value_zero",
     );
-    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
+    context.build_conditional_branch(is_value_zero, value_zero_block, value_zero_block);
 
     context.set_basic_block(value_non_zero_block);
     let extra_data_offset = context.builder().build_int_add(

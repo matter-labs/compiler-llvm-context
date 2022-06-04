@@ -165,7 +165,7 @@ where
     );
     let address = call_deployer(
         context,
-        context.field_const_str_hex(compiler_common::ABI_ADDRESS_SET_CONTEXT_VALUE_CALL),
+        context.field_const_str_hex(compiler_common::ABI_ADDRESS_MSG_VALUE),
         input_offset,
         input_length_with_extra,
         signature,

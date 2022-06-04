@@ -55,8 +55,10 @@ where
     let balance_call_success_block = context.append_basic_block("balance_call_success_block");
     let balance_call_join_block = context.append_basic_block("balance_call_join_block");
 
-    let input_offset = context
-        .field_const(compiler_common::ABI_MEMORY_OFFSET_ARBITRARY_EXTERNAL_CALL_SPACE as u64);
+    let input_offset = context.field_const(
+        (compiler_common::ABI_MEMORY_OFFSET_ARBITRARY_EXTERNAL_CALL_SPACE
+            * compiler_common::SIZE_FIELD) as u64,
+    );
     let input_length_shifted = context.builder().build_left_shift(
         context.field_const((compiler_common::SIZE_X32 + compiler_common::SIZE_FIELD) as u64),
         context.field_const(compiler_common::BITLENGTH_X64 as u64),

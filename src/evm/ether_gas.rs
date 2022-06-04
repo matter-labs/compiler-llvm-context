@@ -105,7 +105,7 @@ where
 
     let result_pointer = context
         .build_invoke(
-            context.runtime.far_call,
+            context.runtime.static_call,
             &[
                 context
                     .field_const_str(compiler_common::ABI_ADDRESS_ETH_TOKEN)

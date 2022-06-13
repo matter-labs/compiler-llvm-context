@@ -60,8 +60,8 @@ where
     /// The declared functions.
     pub functions: HashMap<String, Function<'ctx>>,
 
-    /// The current contract code type.
-    code_type: Option<CodeType>,
+    /// The contract code type.
+    code_type: CodeType,
     /// The project dependency manager.
     dependency_manager: Option<Arc<RwLock<D>>>,
     /// Whether to dump the specified IRs.
@@ -87,6 +87,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module_name: &str,
+        code_type: CodeType,
         mut optimizer: Optimizer<'ctx>,
         dependency_manager: Option<Arc<RwLock<D>>>,
         dump_flags: Vec<DumpFlag>,
@@ -106,7 +107,7 @@ where
             runtime,
             functions: HashMap::with_capacity(Self::FUNCTION_HASHMAP_INITIAL_CAPACITY),
 
-            code_type: None,
+            code_type,
             dependency_manager,
             dump_flags,
 
@@ -120,12 +121,20 @@ where
     pub fn new_evm(
         llvm: &'ctx inkwell::context::Context,
         module_name: &str,
+        code_type: CodeType,
         optimizer: Optimizer<'ctx>,
         dependency_manager: Option<Arc<RwLock<D>>>,
         dump_flags: Vec<DumpFlag>,
         evm_data: EVMData<'ctx>,
     ) -> Self {
-        let mut object = Self::new(llvm, module_name, optimizer, dependency_manager, dump_flags);
+        let mut object = Self::new(
+            llvm,
+            module_name,
+            code_type,
+            optimizer,
+            dependency_manager,
+            dump_flags,
+        );
         object.evm_data = Some(evm_data);
         object
     }
@@ -136,26 +145,34 @@ where
     pub fn build(self, contract_path: &str) -> anyhow::Result<Build> {
         if self.dump_flags.contains(&DumpFlag::LLVM) {
             let llvm_code = self.module().print_to_string().to_string();
-            eprintln!("Contract `{}` LLVM IR unoptimized:\n", contract_path);
+            eprintln!(
+                "Contract `{}` {} code LLVM IR unoptimized:\n",
+                contract_path, self.code_type
+            );
             println!("{}", llvm_code);
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` unoptimized LLVM IR verification error: {}",
+                "The contract `{}` {} code unoptimized LLVM IR verification error: {}",
                 contract_path,
+                self.code_type,
                 error
             )
         })?;
         let is_optimized = self.optimize();
         if self.dump_flags.contains(&DumpFlag::LLVM) && is_optimized {
             let llvm_code = self.module().print_to_string().to_string();
-            eprintln!("Contract `{}` LLVM IR optimized:\n", contract_path);
+            eprintln!(
+                "Contract `{}` {} code LLVM IR optimized:\n",
+                contract_path, self.code_type
+            );
             println!("{}", llvm_code);
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` optimized LLVM IR verification error: {}",
+                "The contract `{}` {} code optimized LLVM IR verification error: {}",
                 contract_path,
+                self.code_type,
                 error
             )
         })?;
@@ -165,23 +182,28 @@ where
             .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
             .map_err(|error| {
                 anyhow::anyhow!(
-                    "The contract `{}` assembly generating error: {}",
+                    "The contract `{}` {} code assembly generating error: {}",
                     contract_path,
+                    self.code_type,
                     error
                 )
             })?;
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
         if self.dump_flags.contains(&DumpFlag::Assembly) {
-            eprintln!("Contract `{}` assembly:\n", contract_path);
+            eprintln!(
+                "Contract `{}` {} code assembly:\n",
+                contract_path, self.code_type
+            );
             println!("{}", assembly_text);
         }
 
         let assembly =
             zkevm_assembly::Assembly::try_from(assembly_text.clone()).map_err(|error| {
                 anyhow::anyhow!(
-                    "The contract `{}` assembly parsing error: {}",
+                    "The contract `{}` {} code assembly parsing error: {}",
                     contract_path,
+                    self.code_type,
                     error
                 )
             })?;
@@ -195,8 +217,9 @@ where
 
         let hash = crate::hashes::bytecode_hash(bytecode.as_slice()).map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` bytecode hashing error: {}",
+                "The contract `{}` {} code bytecode hashing error: {}",
                 contract_path,
+                self.code_type,
                 error
             )
         })?;
@@ -226,17 +249,10 @@ where
     }
 
     ///
-    /// Sets the current code type.
-    ///
-    pub fn set_code_type(&mut self, code_type: CodeType) {
-        self.code_type = Some(code_type);
-    }
-
-    ///
     /// Returns the current code type.
     ///
     pub fn code_type(&self) -> CodeType {
-        self.code_type.expect("Always exists")
+        self.code_type
     }
 
     ///

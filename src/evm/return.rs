@@ -22,7 +22,7 @@ where
     match context.code_type() {
         CodeType::Deploy => {
             let immutables_offset_pointer = context.access_memory(
-                context.field_const(0),
+                context.field_const(compiler_common::SIZE_FIELD as u64),
                 AddressSpace::Heap,
                 "immutables_offset_pointer",
             );
@@ -32,7 +32,7 @@ where
             );
 
             let immutables_length_pointer = context.access_memory(
-                context.field_const(compiler_common::SIZE_FIELD as u64),
+                context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
                 AddressSpace::Heap,
                 "immutables_length_pointer",
             );

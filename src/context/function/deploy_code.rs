@@ -4,8 +4,12 @@
 
 use std::marker::PhantomData;
 
-use crate::context::code_type::CodeType;
+use inkwell::types::BasicType;
+use inkwell::values::BasicValue;
+
+use crate::context::address_space::AddressSpace;
 use crate::context::function::runtime::Runtime;
+use crate::context::function::Function;
 use crate::context::Context;
 use crate::Dependency;
 use crate::WriteLLVM;
@@ -21,6 +25,8 @@ where
 {
     /// The deploy code AST representation.
     inner: B,
+    /// The runtime code hash.
+    runtime_code_hash: String,
     /// The `D` phantom data.
     _pd: PhantomData<D>,
 }
@@ -33,9 +39,10 @@ where
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(inner: B) -> Self {
+    pub fn new(inner: B, runtime_code_hash: String) -> Self {
         Self {
             inner,
+            runtime_code_hash,
             _pd: PhantomData::default(),
         }
     }
@@ -47,11 +54,12 @@ where
     D: Dependency,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
-        let function_type = context.function_type(0, vec![]);
+        let function_type =
+            context.function_type(1, vec![context.field_type().as_basic_type_enum(); 2]);
         context.add_function(
             Runtime::FUNCTION_DEPLOY_CODE,
             function_type,
-            Some(inkwell::module::Linkage::Private),
+            Some(inkwell::module::Linkage::External),
         );
 
         self.inner.declare(context)
@@ -66,7 +74,35 @@ where
         context.set_function(function);
 
         context.set_basic_block(context.function().entry_block);
-        context.set_code_type(CodeType::Deploy);
+        let calldata_offset = context
+            .function()
+            .value
+            .get_nth_param(Function::ARGUMENT_INDEX_CALLDATA_OFFSET as u32)
+            .expect("Always exists")
+            .into_int_value();
+        let calldata_offset = context.builder().build_and(
+            calldata_offset,
+            context.field_const(((1 << 24) - 1) as u64),
+            "calldata_offset_masked",
+        );
+        let calldata_length = context
+            .function()
+            .value
+            .get_nth_param(Function::ARGUMENT_INDEX_CALLDATA_LENGTH as u32)
+            .expect("Always exists")
+            .into_int_value();
+        context.write_abi_data(calldata_offset, calldata_length, AddressSpace::Parent);
+
+        let runtime_code_hash_pointer = context.access_memory(
+            context.field_const(0),
+            AddressSpace::Heap,
+            "runtime_code_hash_pointer",
+        );
+        context.build_store(
+            runtime_code_hash_pointer,
+            context.field_const_str(self.runtime_code_hash.as_str()),
+        );
+
         self.inner.into_llvm(context)?;
         match context
             .basic_block()
@@ -79,7 +115,10 @@ where
         }
 
         context.set_basic_block(context.function().return_block);
-        context.build_return(None);
+        let return_value = context
+            .read_abi_data(AddressSpace::Parent)
+            .as_basic_value_enum();
+        context.build_return(Some(&return_value));
 
         Ok(())
     }

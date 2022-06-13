@@ -4,7 +4,6 @@
 
 pub mod block;
 pub mod deploy_code;
-pub mod entry;
 pub mod evm_data;
 pub mod intrinsic;
 pub mod r#return;
@@ -50,6 +49,12 @@ impl<'ctx> Function<'ctx> {
 
     /// The near call ABI exception handler name.
     pub const ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER: &'static str = "ZKSYNC_CATCH_NEAR_CALL";
+
+    /// The calldata offset entry argument index.
+    pub const ARGUMENT_INDEX_CALLDATA_OFFSET: usize = 0;
+
+    /// The calldata length entry argument index.
+    pub const ARGUMENT_INDEX_CALLDATA_LENGTH: usize = 1;
 
     /// The stack hashmap default capacity.
     const STACK_HASHMAP_INITIAL_CAPACITY: usize = 64;

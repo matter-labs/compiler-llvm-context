@@ -17,7 +17,6 @@ pub use self::context::function::block::evm_data::EVMData as FunctionBlockEVMDat
 pub use self::context::function::block::key::Key as FunctionBlockKey;
 pub use self::context::function::block::Block as FunctionBlock;
 pub use self::context::function::deploy_code::DeployCode as DeployCodeFunction;
-pub use self::context::function::entry::Entry as EntryFunction;
 pub use self::context::function::evm_data::EVMData as FunctionEVMData;
 pub use self::context::function::intrinsic::Intrinsic as IntrinsicFunction;
 pub use self::context::function::r#return::Return as FunctionReturn;

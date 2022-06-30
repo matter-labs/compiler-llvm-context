@@ -51,6 +51,7 @@ where
 {
     let condition_block = context.append_basic_block("exponent_loop_condition");
     let body_block = context.append_basic_block("exponent_loop_body");
+    let multiplying_block = context.append_basic_block("exponent_loop_multiplying");
     let iterating_block = context.append_basic_block("exponent_loop_iterating");
     let join_block = context.append_basic_block("exponent_loop_join");
 
@@ -70,13 +71,13 @@ where
         inkwell::IntPredicate::UGT,
         power_value,
         context.field_const(0),
-        "exponent_loop_condition",
+        "exponent_loop_is_power_value_non_zero",
     );
     context.build_conditional_branch(condition, body_block, join_block);
 
     context.set_basic_block(iterating_block);
     let factor_value = context
-        .build_load(factor_pointer, "exponent_loop_power_value_to_square")
+        .build_load(factor_pointer, "exponent_loop_factor_value_to_square")
         .into_int_value();
     let factor_value_squared = context.builder().build_int_mul(
         factor_value,
@@ -87,26 +88,35 @@ where
     let power_value = context
         .build_load(power_pointer, "exponent_loop_power_value_to_half")
         .into_int_value();
-    let halved = context.builder().build_int_unsigned_div(
+    let power_value_halved = context.builder().build_int_unsigned_div(
         power_value,
         context.field_const(2),
         "exponent_loop_power_value_halved",
     );
-    context.build_store(power_pointer, halved);
-    let power_lowest_bit = context.builder().build_int_truncate_or_bit_cast(
-        halved,
-        context.integer_type(compiler_common::BITLENGTH_BOOLEAN),
-        "exponent_loop_power_lowest_bit",
-    );
-    context.build_conditional_branch(power_lowest_bit, condition_block, iterating_block);
+    context.build_store(power_pointer, power_value_halved);
+    context.build_unconditional_branch(condition_block);
 
     context.set_basic_block(body_block);
+    let power_value = context
+        .build_load(power_pointer, "exponent_loop_power_value_body")
+        .into_int_value();
+    let power_lowest_bit = context.builder().build_int_truncate_or_bit_cast(
+        power_value,
+        context.integer_type(compiler_common::BITLENGTH_BOOLEAN),
+        "exponent_loop_power_body_lowest_bit",
+    );
+    context.build_conditional_branch(power_lowest_bit, multiplying_block, iterating_block);
+
+    context.set_basic_block(multiplying_block);
     let intermediate = context
         .build_load(result_pointer, "exponent_loop_intermediate_result")
         .into_int_value();
+    let factor_value = context
+        .build_load(factor_pointer, "exponent_loop_intermediate_factor_value")
+        .into_int_value();
     let result = context.builder().build_int_mul(
         intermediate,
-        arguments[0].into_int_value(),
+        factor_value,
         "exponent_loop_intermediate_result_multiplied",
     );
     context.build_store(result_pointer, result);

@@ -103,7 +103,7 @@ where
 
         context.set_basic_block(context.function().entry_block);
         context.set_code_type(CodeType::Runtime);
-        //        Self::check_extcodesize(context)?;
+        Self::check_extcodesize(context)?;
         self.inner.into_llvm(context)?;
         match context
             .basic_block()

@@ -26,6 +26,9 @@ impl<'ctx> Optimizer<'ctx> {
     /// The LLVM target name.
     pub const VM_TARGET_NAME: &'static str = "syncvm";
 
+    /// The LLVM target triple.
+    pub const VM_TARGET_TRIPLE: &'static str = "syncvm-unknown-unknown";
+
     /// The actual production VM name.
     pub const VM_PRODUCTION_NAME: &'static str = "zkEVM";
 
@@ -38,7 +41,7 @@ impl<'ctx> Optimizer<'ctx> {
                 anyhow::anyhow!("LLVM target machine `{}` not found", Self::VM_TARGET_NAME)
             })?
             .create_target_machine(
-                &inkwell::targets::TargetTriple::create(Self::VM_TARGET_NAME),
+                &inkwell::targets::TargetTriple::create(Self::VM_TARGET_TRIPLE),
                 "",
                 "",
                 settings.level_back_end,

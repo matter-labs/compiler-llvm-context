@@ -2,6 +2,7 @@
 //! Translates a contract call.
 //!
 
+pub mod request;
 pub mod simulation;
 
 use inkwell::values::BasicValue;

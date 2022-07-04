@@ -5,6 +5,7 @@
 use std::marker::PhantomData;
 
 use crate::context::code_type::CodeType;
+use crate::context::function::intrinsic::Intrinsic as IntrinsicFunction;
 use crate::context::function::runtime::Runtime;
 use crate::context::Context;
 use crate::Dependency;
@@ -39,6 +40,41 @@ where
             _pd: PhantomData::default(),
         }
     }
+
+    ///
+    /// Adds the `extcodesize(this) != 0` check.
+    ///
+    pub fn check_extcodesize(context: &mut Context<D>) -> anyhow::Result<()> {
+        let revert_block = context.append_basic_block("check_extcodesize_revert");
+        let join_block = context.append_basic_block("check_extcodesize_join");
+
+        let address = context
+            .build_call(
+                context.get_intrinsic_function(IntrinsicFunction::Address),
+                &[],
+                "check_extcodesize_this_address",
+            )
+            .expect("Always exists");
+        let extcodesize =
+            crate::evm::ext_code::size(context, address.into_int_value())?.expect("Always exists");
+        let extcodesize_non_zero = context.builder().build_int_compare(
+            inkwell::IntPredicate::NE,
+            extcodesize.into_int_value(),
+            context.field_const(0),
+            "check_extcodesize_non_zero",
+        );
+        context.build_conditional_branch(extcodesize_non_zero, join_block, revert_block);
+
+        context.set_basic_block(revert_block);
+        context.build_exit(
+            IntrinsicFunction::Revert,
+            context.field_const(0),
+            context.field_const(0),
+        );
+
+        context.set_basic_block(join_block);
+        Ok(())
+    }
 }
 
 impl<B, D> WriteLLVM<D> for RuntimeCode<B, D>
@@ -67,6 +103,7 @@ where
 
         context.set_basic_block(context.function().entry_block);
         context.set_code_type(CodeType::Runtime);
+        Self::check_extcodesize(context)?;
         self.inner.into_llvm(context)?;
         match context
             .basic_block()

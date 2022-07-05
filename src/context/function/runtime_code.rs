@@ -77,7 +77,7 @@ where
 
         context.set_basic_block(revert_block);
         context.build_exit(
-            IntrinsicFunction::Revert,
+            IntrinsicFunction::Return,
             context.field_const(0),
             context.field_const(0),
         );

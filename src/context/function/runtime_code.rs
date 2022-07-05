@@ -45,6 +45,7 @@ where
     /// Adds the `extcodesize(this) != 0` check.
     ///
     pub fn check_extcodesize(context: &mut Context<D>) -> anyhow::Result<()> {
+        let call_block = context.append_basic_block("check_extcodesize_call");
         let revert_block = context.append_basic_block("check_extcodesize_revert");
         let join_block = context.append_basic_block("check_extcodesize_join");
 
@@ -55,6 +56,15 @@ where
                 "check_extcodesize_this_address",
             )
             .expect("Always exists");
+        let address_is_account_code_storage = context.builder().build_int_compare(
+            inkwell::IntPredicate::EQ,
+            address.into_int_value(),
+            context.field_const_str(compiler_common::ABI_ADDRESS_ACCOUNT_CODE_STORAGE),
+            "check_address_is_account_code_storage",
+        );
+        context.build_conditional_branch(address_is_account_code_storage, join_block, call_block);
+
+        context.set_basic_block(call_block);
         let extcodesize =
             crate::evm::ext_code::size(context, address.into_int_value())?.expect("Always exists");
         let extcodesize_non_zero = context.builder().build_int_compare(

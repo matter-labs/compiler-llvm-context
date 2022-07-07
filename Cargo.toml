@@ -31,4 +31,4 @@ compiler-common = { git = "ssh://git@github.com/matter-labs/compiler-common" }
 [dependencies.inkwell]
 git = "ssh://git@github.com/matter-labs-forks/inkwell"
 default-features = false
-features = ["llvm13-0", "target-syncvm"]
+features = ["llvm13-0", "no-libffi-linking", "target-syncvm"]

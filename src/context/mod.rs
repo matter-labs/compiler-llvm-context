@@ -69,6 +69,9 @@ where
 
     /// The EVM compiler data.
     evm_data: Option<EVMData<'ctx>>,
+    /// The immutables size tracker. Stores the size in bytes.
+    /// Does not take into account the size of the indexes.
+    immutables_size: usize,
 }
 
 impl<'ctx, D> Context<'ctx, D>
@@ -111,6 +114,7 @@ where
             dump_flags,
 
             evm_data: None,
+            immutables_size: 0,
         }
     }
 
@@ -1210,5 +1214,21 @@ where
         self.evm_data
             .as_mut()
             .expect("The EVM data must have been initialized")
+    }
+
+    ///
+    /// Returns the current immutable size.
+    ///
+    pub fn immutable_size(&self) -> usize {
+        self.immutables_size
+    }
+
+    ///
+    /// Updates the current immutable size.
+    ///
+    pub fn update_immutable_size(&mut self, value: usize) {
+        if value > self.immutables_size {
+            self.immutables_size = value;
+        }
     }
 }

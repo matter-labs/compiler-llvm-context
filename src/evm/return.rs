@@ -22,7 +22,10 @@ where
     match context.code_type() {
         CodeType::Deploy => {
             let immutables_offset_pointer = context.access_memory(
-                context.field_const(0),
+                context.field_const(
+                    (compiler_common::ABI_MEMORY_OFFSET_CONSTRUCTOR_RETURN_DATA
+                        * compiler_common::SIZE_FIELD) as u64,
+                ),
                 AddressSpace::Heap,
                 "immutables_offset_pointer",
             );
@@ -31,17 +34,37 @@ where
                 context.field_const(compiler_common::SIZE_FIELD as u64),
             );
 
-            let immutables_length_pointer = context.access_memory(
-                context.field_const(compiler_common::SIZE_FIELD as u64),
+            let immutables_number_pointer = context.access_memory(
+                context.field_const(
+                    ((compiler_common::ABI_MEMORY_OFFSET_CONSTRUCTOR_RETURN_DATA + 1)
+                        * compiler_common::SIZE_FIELD) as u64,
+                ),
                 AddressSpace::Heap,
-                "immutables_length_pointer",
+                "immutables_number_pointer",
             );
-            context.build_store(immutables_length_pointer, context.field_const(0));
+            let immutable_values_size = context.immutable_size();
+            context.build_store(
+                immutables_number_pointer,
+                context.field_const((immutable_values_size / compiler_common::SIZE_FIELD) as u64),
+            );
+            let immutables_size = context.builder().build_int_mul(
+                context.field_const(immutable_values_size as u64),
+                context.field_const(2),
+                "immutables_size",
+            );
+            let return_data_length = context.builder().build_int_add(
+                immutables_size,
+                context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
+                "return_data_length",
+            );
 
             context.build_exit(
                 IntrinsicFunction::Return,
-                context.field_const(0),
-                context.field_const((compiler_common::SIZE_FIELD * 2) as u64),
+                context.field_const(
+                    (compiler_common::ABI_MEMORY_OFFSET_CONSTRUCTOR_RETURN_DATA
+                        * compiler_common::SIZE_FIELD) as u64,
+                ),
+                return_data_length,
             );
         }
         CodeType::Runtime => {

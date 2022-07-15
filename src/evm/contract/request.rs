@@ -29,7 +29,9 @@ where
             * compiler_common::SIZE_FIELD) as u64,
     );
     let input_length_shifted = context.builder().build_left_shift(
-        context.field_const((compiler_common::SIZE_X32 + compiler_common::SIZE_FIELD) as u64),
+        context.field_const(
+            (compiler_common::SIZE_X32 + (compiler_common::SIZE_FIELD * arguments.len())) as u64,
+        ),
         context.field_const(compiler_common::BITLENGTH_X64 as u64),
         "call_input_length_shifted",
     );

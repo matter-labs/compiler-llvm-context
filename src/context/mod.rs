@@ -150,12 +150,20 @@ where
                 error
             )
         })?;
-        let is_optimized = self.optimize();
-        if self.dump_flags.contains(&DumpFlag::LLVM) && is_optimized {
-            let llvm_code = self.module().print_to_string().to_string();
-            eprintln!("Contract `{}` LLVM IR optimized:\n", contract_path);
-            println!("{}", llvm_code);
+
+        let mut optimizer_iteration = 1;
+        while self.optimize() {
+            if self.dump_flags.contains(&DumpFlag::LLVM) {
+                let llvm_code = self.module().print_to_string().to_string();
+                eprintln!(
+                    "Contract `{}` LLVM IR optimized (iteration {}):\n",
+                    contract_path, optimizer_iteration
+                );
+                println!("{}", llvm_code);
+            }
+            optimizer_iteration += 1;
         }
+
         self.verify().map_err(|error| {
             anyhow::anyhow!(
                 "The contract `{}` optimized LLVM IR verification error: {}",

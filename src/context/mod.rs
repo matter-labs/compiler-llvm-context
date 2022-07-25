@@ -150,6 +150,7 @@ where
                 error
             )
         })?;
+
         let is_optimized = self.optimize();
         if self.dump_flags.contains(&DumpFlag::LLVM) && is_optimized {
             let llvm_code = self.module().print_to_string().to_string();
@@ -260,8 +261,25 @@ where
     pub fn optimize(&self) -> bool {
         let mut is_optimized = false;
 
-        for (_, function) in self.functions.iter() {
-            is_optimized |= self.optimizer.run_on_function(function.value);
+        let mut functions = Vec::new();
+        if let Some(mut current) = self.module.get_first_function() {
+            functions.push(current);
+            while let Some(function) = current.get_next_function() {
+                functions.push(function);
+                current = function;
+            }
+        }
+        for function in functions.into_iter() {
+            if function.get_name().to_string_lossy().starts_with("llvm.")
+                || (function.get_name().to_string_lossy().starts_with("__")
+                    && function.get_name().to_string_lossy() != Runtime::FUNCTION_ENTRY
+                    && function.get_name().to_string_lossy() != Runtime::FUNCTION_DEPLOY_CODE
+                    && function.get_name().to_string_lossy() != Runtime::FUNCTION_RUNTIME_CODE)
+            {
+                continue;
+            }
+
+            is_optimized |= self.optimizer.run_on_function(function);
         }
         is_optimized |= self.optimizer.run_on_module(self.module());
 

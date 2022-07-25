@@ -77,17 +77,19 @@ impl<'ctx> Optimizer<'ctx> {
         } else {
             pass_manager_builder.set_optimization_level(self.settings.level_middle_end);
         }
+        if self.settings.is_inliner_enabled {
+            pass_manager_builder.set_inliner_with_threshold(i32::MAX as u32);
+        }
         pass_manager_builder.set_disable_unroll_loops(true);
 
         let pass_manager_module = inkwell::passes::PassManager::create(());
-        pass_manager_builder.populate_lto_pass_manager(
-            &pass_manager_module,
-            true,
-            self.settings.is_inliner_enabled,
-        );
+        self.target_machine
+            .add_analysis_passes(&pass_manager_module);
         pass_manager_builder.populate_module_pass_manager(&pass_manager_module);
 
         let pass_manager_function = inkwell::passes::PassManager::create(module);
+        self.target_machine
+            .add_analysis_passes(&pass_manager_function);
         pass_manager_builder.populate_function_pass_manager(&pass_manager_function);
 
         self.pass_manager_module = Some(pass_manager_module);

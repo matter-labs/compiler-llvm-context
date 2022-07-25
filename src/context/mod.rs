@@ -377,15 +377,7 @@ where
         }
         value.add_attribute(
             inkwell::attributes::AttributeLoc::Function,
-            self.llvm.create_enum_attribute(Attribute::Cold as u32, 0),
-        );
-        value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
             self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
-        );
-        value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            self.llvm.create_enum_attribute(Attribute::NoSync as u32, 0),
         );
         value.add_attribute(
             inkwell::attributes::AttributeLoc::Function,

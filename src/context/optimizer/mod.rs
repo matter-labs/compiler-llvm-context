@@ -78,7 +78,7 @@ impl<'ctx> Optimizer<'ctx> {
             pass_manager_builder.set_optimization_level(self.settings.level_middle_end);
         }
         if self.settings.is_inliner_enabled {
-            pass_manager_builder.set_inliner_with_threshold(u32::MAX);
+            pass_manager_builder.set_inliner_with_threshold(i32::MAX as u32);
         }
         pass_manager_builder.set_disable_unroll_loops(true);
 

@@ -77,9 +77,6 @@ impl<'ctx> Optimizer<'ctx> {
         } else {
             pass_manager_builder.set_optimization_level(self.settings.level_middle_end);
         }
-        if self.settings.is_inliner_enabled {
-            pass_manager_builder.set_inliner_with_threshold(i32::MAX as u32);
-        }
         pass_manager_builder.set_disable_unroll_loops(true);
 
         let pass_manager_module = inkwell::passes::PassManager::create(());

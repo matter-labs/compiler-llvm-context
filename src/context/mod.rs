@@ -368,13 +368,30 @@ where
                 self.llvm
                     .create_enum_attribute(Attribute::NoInline as u32, 0),
             );
-        } else if name != Runtime::FUNCTION_ENTRY {
-            // value.add_attribute(
-            //     inkwell::attributes::AttributeLoc::Function,
-            //     self.llvm
-            //         .create_enum_attribute(Attribute::AlwaysInline as u32, 0),
-            // );
+        } else if self.optimizer.settings().is_inliner_enabled {
+            value.add_attribute(
+                inkwell::attributes::AttributeLoc::Function,
+                self.llvm
+                    .create_enum_attribute(Attribute::AlwaysInline as u32, 0),
+            );
         }
+        value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            self.llvm.create_enum_attribute(Attribute::Cold as u32, 0),
+        );
+        value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
+        );
+        value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            self.llvm.create_enum_attribute(Attribute::NoSync as u32, 0),
+        );
+        value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            self.llvm
+                .create_enum_attribute(Attribute::NullPointerIsValid as u32, 0),
+        );
 
         value.set_personality_function(self.runtime.personality);
 

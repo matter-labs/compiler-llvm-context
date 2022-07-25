@@ -350,6 +350,12 @@ where
                 self.llvm
                     .create_enum_attribute(Attribute::NoInline as u32, 0),
             );
+        } else if name != Runtime::FUNCTION_ENTRY {
+            // value.add_attribute(
+            //     inkwell::attributes::AttributeLoc::Function,
+            //     self.llvm
+            //         .create_enum_attribute(Attribute::AlwaysInline as u32, 0),
+            // );
         }
 
         value.set_personality_function(self.runtime.personality);
@@ -1220,10 +1226,24 @@ where
                 if Some(argument.get_type()) == return_type {
                     call_site_value.add_attribute(
                         inkwell::attributes::AttributeLoc::Param(index as u32),
+                        self.llvm.create_enum_attribute(Attribute::Nest as u32, 0),
+                    );
+                    call_site_value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Param(index as u32),
                         self.llvm
                             .create_enum_attribute(Attribute::Returned as u32, 0),
                     );
                 }
+                call_site_value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    self.llvm
+                        .create_enum_attribute(Attribute::NonNull as u32, 0),
+                );
+                call_site_value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    self.llvm
+                        .create_enum_attribute(Attribute::NoUndef as u32, 0),
+                );
             }
         }
 
@@ -1239,6 +1259,16 @@ where
                 inkwell::attributes::AttributeLoc::Return,
                 self.llvm
                     .create_enum_attribute(Attribute::NoAlias as u32, 0),
+            );
+            call_site_value.add_attribute(
+                inkwell::attributes::AttributeLoc::Return,
+                self.llvm
+                    .create_enum_attribute(Attribute::NonNull as u32, 0),
+            );
+            call_site_value.add_attribute(
+                inkwell::attributes::AttributeLoc::Return,
+                self.llvm
+                    .create_enum_attribute(Attribute::NoUndef as u32, 0),
             );
         }
     }

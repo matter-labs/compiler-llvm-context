@@ -592,18 +592,19 @@ where
     pub fn build_call(
         &self,
         function: inkwell::values::FunctionValue<'ctx>,
-        args: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
-        let args: Vec<inkwell::values::BasicMetadataValueEnum> = args
+        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
             .map(inkwell::values::BasicMetadataValueEnum::from)
             .collect();
-        self.builder
-            .build_call(function, args.as_slice(), name)
-            .try_as_basic_value()
-            .left()
+        let call_site_value = self
+            .builder
+            .build_call(function, arguments_wrapped.as_slice(), name);
+        self.modify_call_site_value(arguments, call_site_value);
+        call_site_value.try_as_basic_value().left()
     }
 
     ///
@@ -614,14 +615,14 @@ where
     pub fn build_invoke(
         &self,
         function: inkwell::values::FunctionValue<'ctx>,
-        args: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
         if !self
             .functions
             .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
         {
-            return self.build_call(function, args, name);
+            return self.build_call(function, arguments, name);
         }
 
         let return_pointer = if let Some(r#type) = function.get_type().get_return_type() {
@@ -669,7 +670,8 @@ where
         self.set_basic_block(current_block);
         let call_site_value =
             self.builder
-                .build_invoke(function, args, success_block, catch_block, name);
+                .build_invoke(function, arguments, success_block, catch_block, name);
+        self.modify_call_site_value(arguments, call_site_value);
 
         self.set_basic_block(success_block);
         if let (Some(return_pointer), Some(mut return_value)) =
@@ -698,7 +700,7 @@ where
     pub fn build_invoke_far_call(
         &self,
         function: inkwell::values::FunctionValue<'ctx>,
-        mut args: Vec<inkwell::values::BasicValueEnum<'ctx>>,
+        mut arguments: Vec<inkwell::values::BasicValueEnum<'ctx>>,
         error_block: inkwell::basic_block::BasicBlock<'ctx>,
         name: &str,
     ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
@@ -715,7 +717,7 @@ where
             ])
             .as_basic_type_enum();
         let result_pointer = self.build_alloca(result_type, "mimic_call_result_pointer");
-        args.push(result_pointer.as_basic_value_enum());
+        arguments.push(result_pointer.as_basic_value_enum());
 
         self.set_basic_block(catch_block);
         let landing_pad_type = self.structure_type(vec![
@@ -744,9 +746,14 @@ where
         self.build_unconditional_branch(error_block);
 
         self.set_basic_block(current_block);
-        let call_site_value =
-            self.builder
-                .build_invoke(function, args.as_slice(), join_block, catch_block, name);
+        let call_site_value = self.builder.build_invoke(
+            function,
+            arguments.as_slice(),
+            join_block,
+            catch_block,
+            name,
+        );
+        self.modify_call_site_value(arguments.as_slice(), call_site_value);
         self.set_basic_block(join_block);
         call_site_value.try_as_basic_value().left()
     }
@@ -757,7 +764,7 @@ where
     pub fn build_invoke_near_call_abi(
         &self,
         function: inkwell::values::FunctionValue<'ctx>,
-        args: Vec<inkwell::values::BasicValueEnum<'ctx>>,
+        arguments: Vec<inkwell::values::BasicValueEnum<'ctx>>,
         name: &str,
     ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
         let join_block = self.append_basic_block("near_call_join_block");
@@ -803,17 +810,18 @@ where
             self.set_basic_block(current_block);
             let call_site_value = self.builder.build_invoke(
                 self.get_intrinsic_function(IntrinsicFunction::NearCall),
-                args.as_slice(),
+                arguments.as_slice(),
                 success_block,
                 catch_block,
                 name,
             );
+            self.modify_call_site_value(arguments.as_slice(), call_site_value);
             self.set_basic_block(success_block);
             call_site_value.try_as_basic_value().left()
         } else {
             self.build_call(
                 self.get_intrinsic_function(IntrinsicFunction::NearCall),
-                args.as_slice(),
+                arguments.as_slice(),
                 name,
             )
         };
@@ -1173,6 +1181,65 @@ where
                 argument_types.insert(0, return_type.as_basic_type_enum().into());
                 return_type.fn_type(argument_types.as_slice(), false)
             }
+        }
+    }
+
+    ///
+    /// Modifies the call site value, setting the default attributes.
+    ///
+    pub fn modify_call_site_value(
+        &self,
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        call_site_value: inkwell::values::CallSiteValue<'ctx>,
+    ) {
+        let return_type = call_site_value
+            .get_called_fn_value()
+            .get_type()
+            .get_return_type();
+
+        for (index, argument) in arguments.iter().enumerate() {
+            if argument.is_pointer_value() {
+                call_site_value.set_alignment_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    compiler_common::SIZE_FIELD as u32,
+                );
+                call_site_value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    self.llvm
+                        .create_enum_attribute(Attribute::NoAlias as u32, 0),
+                );
+                call_site_value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    self.llvm
+                        .create_enum_attribute(Attribute::NoCapture as u32, 0),
+                );
+                call_site_value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Param(index as u32),
+                    self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
+                );
+                if Some(argument.get_type()) == return_type {
+                    call_site_value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Param(index as u32),
+                        self.llvm
+                            .create_enum_attribute(Attribute::Returned as u32, 0),
+                    );
+                }
+            }
+        }
+
+        if return_type
+            .map(|r#type| r#type.is_pointer_type())
+            .unwrap_or_default()
+        {
+            call_site_value.set_alignment_attribute(
+                inkwell::attributes::AttributeLoc::Return,
+                compiler_common::SIZE_FIELD as u32,
+            );
+            call_site_value.add_attribute(
+                inkwell::attributes::AttributeLoc::Return,
+                self.llvm
+                    .create_enum_attribute(Attribute::NoAlias as u32, 0),
+            );
         }
     }
 

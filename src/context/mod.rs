@@ -369,11 +369,11 @@ where
                     .create_enum_attribute(Attribute::NoInline as u32, 0),
             );
         } else if self.optimizer.settings().is_inliner_enabled {
-            value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                self.llvm
-                    .create_enum_attribute(Attribute::AlwaysInline as u32, 0),
-            );
+            // value.add_attribute(
+            //     inkwell::attributes::AttributeLoc::Function,
+            //     self.llvm
+            //         .create_enum_attribute(Attribute::AlwaysInline as u32, 0),
+            // );
         }
         value.add_attribute(
             inkwell::attributes::AttributeLoc::Function,

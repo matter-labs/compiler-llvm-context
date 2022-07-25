@@ -70,19 +70,6 @@ impl<'ctx> Optimizer<'ctx> {
         module.set_triple(&self.target_machine.get_triple());
         module.set_data_layout(&self.target_machine.get_target_data().get_data_layout());
 
-        let pass_registry = inkwell::passes::PassRegistry::get_global();
-        pass_registry.initialize_core();
-        pass_registry.initialize_transform_utils();
-        pass_registry.initialize_scalar_opts();
-        pass_registry.initialize_obj_carc_opts();
-        pass_registry.initialize_inst_combine();
-        pass_registry.initialize_ipo();
-        pass_registry.initialize_analysis();
-        pass_registry.initialize_ipa();
-        pass_registry.initialize_codegen();
-        pass_registry.initialize_target();
-        pass_registry.initialize_aggressive_inst_combiner();
-
         let pass_manager_builder = inkwell::passes::PassManagerBuilder::create();
         let size_level: u32 = self.settings.level_middle_end_size.into();
         if size_level > 0 {
